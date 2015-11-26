@@ -59,6 +59,9 @@ val noPublishingSettings = Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
+val liblevenshtein = "com.github.dylon" %  "liblevenshtein" % "2.1.2"
+val specs2core     = "org.specs2"       %% "specs2-core"    % "3.6.3" % Test
+
 /////////////////////// PROJECTS /////////////////////////
 
 lazy val root = project.in(file("."))
@@ -78,6 +81,8 @@ lazy val matcher = (project in file("./matcher"))
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "org.globalnames.matcher",
     test in assembly := {},
+
+    libraryDependencies ++= Seq(liblevenshtein, specs2core),
 
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
