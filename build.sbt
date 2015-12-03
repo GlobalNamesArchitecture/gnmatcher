@@ -9,7 +9,8 @@ val commonSettings = Seq(
   startYear := Some(2015),
   licenses := Seq("MIT" -> new URL("https://github.com/GlobalNamesArchitecture/gnmatcher/blob/master/LICENSE")),
   resolvers ++= Seq(
-    "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
+    "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
+    "sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
   ),
   javacOptions ++= Seq(
     "-encoding", "UTF-8",
@@ -59,8 +60,9 @@ val noPublishingSettings = Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val liblevenshtein = "com.github.dylon" %  "liblevenshtein" % "2.1.2"
-val specs2core     = "org.specs2"       %% "specs2-core"    % "3.6.3" % Test
+val liblevenshtein = "org.globalnames"  %  "liblevenshtein"        % "2.1.3-SNAPSHOT"
+val specs2core     = "org.specs2"       %% "specs2-core"           % "3.6.3" % Test
+val specs2extra    = "org.specs2"       %% "specs2-matcher-extra"  % "3.6.3" % Test
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -82,7 +84,7 @@ lazy val matcher = (project in file("./matcher"))
     buildInfoPackage := "org.globalnames.matcher",
     test in assembly := {},
 
-    libraryDependencies ++= Seq(liblevenshtein, specs2core),
+    libraryDependencies ++= Seq(liblevenshtein, specs2core, specs2extra),
 
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
