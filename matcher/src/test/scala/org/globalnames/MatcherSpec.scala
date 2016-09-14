@@ -2,17 +2,11 @@ package org.globalnames
 
 import java.io.File
 
-import org.specs2.mutable.Specification
-import org.specs2.matcher.FileMatchers
-
-class MatcherSpec extends Specification with FileMatchers  {
-  "Matcher".p
-
+class MatcherSpec extends SpecConfig {
   "must transduce correctly" in {
     val matcher = Matcher(Seq("Abdf", "Abce", "Dddd"), 2)
     val candidates = matcher.transduce("Abc")
-    candidates must containTheSameElementsAs(Seq(
-      Candidate("Abce", 1), Candidate("Abdf", 1)))
+    candidates should contain only (Candidate("Abce", 1), Candidate("Abdf", 1))
   }
 
   val dumpPath = "MatcherSpec.ser"
@@ -21,15 +15,14 @@ class MatcherSpec extends Specification with FileMatchers  {
     val matcher = Matcher(Seq("Abdf", "Abce", "Dddd"), 2)
     matcher.dump(dumpPath)
 
-    dumpPath must beAnExistingPath
+    new File(dumpPath) should exist
 
     val matcherRestored = Matcher.restore(dumpPath)
     val candidates = matcherRestored.transduce("Abc")
-    candidates must containTheSameElementsAs(Seq(
-      Candidate("Abce", 1), Candidate("Abdf", 1)))
+    candidates should contain only (Candidate("Abce", 1), Candidate("Abdf", 1))
   }
 
-  step {
+  override def afterAll(): Unit = {
     val dumpFile = new File(dumpPath)
     if (dumpFile.exists) {
       dumpFile.delete()

@@ -61,8 +61,7 @@ val noPublishingSettings = Seq(
 /////////////////////// DEPENDENCIES /////////////////////////
 
 val liblevenshtein = "com.github.universal-automata"  %  "liblevenshtein"        % "3.0.0"
-val specs2core     = "org.specs2"                     %% "specs2-core"           % "3.8.5" % Test
-val specs2extra    = "org.specs2"                     %% "specs2-matcher-extra"  % "3.8.5" % Test
+val scalatest      = "org.scalatest"                  %% "scalatest"             % "2.2.6"    % Test
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -84,7 +83,7 @@ lazy val matcher = (project in file("./matcher"))
     buildInfoPackage := "org.globalnames.matcher",
     test in assembly := {},
 
-    libraryDependencies ++= Seq(liblevenshtein, specs2core, specs2extra),
+    libraryDependencies ++= Seq(liblevenshtein, scalatest),
 
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
