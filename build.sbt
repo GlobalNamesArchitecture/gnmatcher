@@ -60,9 +60,9 @@ val noPublishingSettings = Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val liblevenshtein = "org.globalnames"  %  "liblevenshtein"        % "2.1.3-SNAPSHOT"
-val specs2core     = "org.specs2"       %% "specs2-core"           % "3.6.3" % Test
-val specs2extra    = "org.specs2"       %% "specs2-matcher-extra"  % "3.6.3" % Test
+val liblevenshtein = "com.github.universal-automata"  %  "liblevenshtein"        % "3.0.0"
+val specs2core     = "org.specs2"                     %% "specs2-core"           % "3.8.5" % Test
+val specs2extra    = "org.specs2"                     %% "specs2-matcher-extra"  % "3.8.5" % Test
 
 /////////////////////// PROJECTS /////////////////////////
 

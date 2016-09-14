@@ -5,8 +5,8 @@ import java.io.{ObjectInputStream, FileInputStream, ObjectOutputStream, FileOutp
 import java.util
 import java.util.Comparator
 
-import com.github.dylon.liblevenshtein.levenshtein.{Candidate => LCandidate, ITransducer, Algorithm}
-import com.github.dylon.liblevenshtein.levenshtein.factory.TransducerBuilder
+import com.github.liblevenshtein.transducer.{Candidate => LCandidate, ITransducer, Algorithm}
+import com.github.liblevenshtein.transducer.factory.TransducerBuilder
 
 import scala.collection.JavaConversions._
 
