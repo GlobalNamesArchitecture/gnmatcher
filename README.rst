@@ -73,7 +73,7 @@ as follows:
 Contributors
 ------------
 
-+ Alexander Myltsev `http://myltsev.name <http://myltsev.name>`_ `alexander-myltsev@github <https://github.com/alexander-myltsev>`_
++ Alexander Myltsev `http://myltsev.com <http://myltsev.com>`_ `alexander-myltsev@github <https://github.com/alexander-myltsev>`_
 + Dmitry Mozzherin `dimus@github <https://github.com/dimus>`_
 
 License
