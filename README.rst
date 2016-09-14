@@ -1,6 +1,9 @@
 Global Names Matcher
 ====================
 
+.. image:: https://circleci.com/gh/GlobalNamesArchitecture/gnmatcher.svg?style=svg
+    :target: https://circleci.com/gh/GlobalNamesArchitecture/gnmatcher
+
 Global Names Matcher or ``gnmatcher`` is a Scala 2.10.3+ library for very fast
 fuzzy matching of a query string against given set of strings.
 
