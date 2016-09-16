@@ -85,7 +85,11 @@ lazy val matcher = (project in file("./matcher"))
 
     libraryDependencies ++= Seq(liblevenshtein, scalatest),
 
-    scalacOptions in Test ++= Seq("-Yrangepos")
+    scalacOptions in Test ++= Seq("-Yrangepos"),
+
+    initialCommands in console := """
+      |import org.globalnames._
+      """.stripMargin
   )
 
 lazy val examples = (project in file("./examples/java-scala"))
