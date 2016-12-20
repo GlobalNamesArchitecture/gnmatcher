@@ -2,8 +2,8 @@ import sbt.Keys._
 
 val commonSettings = Seq(
   version := "0.1.1-SNAPSHOT",
-  scalaVersion := "2.11.7",
-  organization := "org.globalnames",
+  scalaVersion := "2.11.8",
+  organization in ThisBuild := "org.globalnames",
   homepage := Some(new URL("http://globalnames.org/")),
   description := "Fast Liblevenshtein distance matcher for scientific names",
   startYear := Some(2015),
@@ -31,10 +31,13 @@ val commonSettings = Seq(
 val publishingSettings = Seq(
   publishMavenStyle := true,
   useGpg := true,
-  publishTo <<= version { v: String =>
+  publishTo := {
     val nexus = "https://oss.sonatype.org/"
-    if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
-    else                             Some("releases" at nexus + "service/local/staging/deploy/maven2")
+    if (version.value.trim.endsWith("SNAPSHOT")) {
+      Some("snapshots" at nexus + "content/repositories/snapshots")
+    } else {
+      Some("releases" at nexus + "service/local/staging/deploy/maven2")
+    }
   },
   pomIncludeRepository := { _ => false },
   pomExtra :=
@@ -69,7 +72,7 @@ lazy val `gnmatcher-root` = project.in(file("."))
   .aggregate(matcher, examples, benchmark)
   .settings(noPublishingSettings: _*)
   .settings(
-    crossScalaVersions := Seq("2.10.3", "2.11.7")
+    crossScalaVersions := Seq("2.10.6", "2.11.8")
   )
 
 lazy val matcher = (project in file("./matcher"))
