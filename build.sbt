@@ -50,7 +50,7 @@ val publishingSettings = Seq(
         <developer>
           <id>alexander-myltsev</id>
           <name>Alexander Myltsev</name>
-          <url>http://myltsev.name</url>
+          <url>http://myltsev.com</url>
         </developer>
       </developers>)
 
@@ -65,7 +65,7 @@ val scalatest      = "org.scalatest"                  %% "scalatest"            
 
 /////////////////////// PROJECTS /////////////////////////
 
-lazy val root = project.in(file("."))
+lazy val `gnmatcher-root` = project.in(file("."))
   .aggregate(matcher, examples, benchmark)
   .settings(noPublishingSettings: _*)
   .settings(
