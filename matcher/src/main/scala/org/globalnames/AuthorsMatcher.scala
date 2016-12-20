@@ -25,13 +25,14 @@ object AuthorsMatcher {
     if (a1.name == a2.name) 1.0
     else {
       def dropPoint(name: String) =
-        if (name.endsWith(".")) name.substring(0, name.length - 2)
+        if (name.endsWith(".")) name.substring(0, name.length - 1)
         else name
 
       val a1pointFree = dropPoint(a1.name)
       val a2pointFree = dropPoint(a2.name)
 
-      if (a1pointFree.startsWith(a2pointFree) || a2pointFree.startsWith(a1pointFree)) 1.0
+      if (a1pointFree.isEmpty || a2pointFree.isEmpty) 0.0
+      else if (a1pointFree.startsWith(a2pointFree) || a2pointFree.startsWith(a1pointFree)) 1.0
       else {
         val distance = dlm.execute(a1pointFree, a2pointFree)
         if (distance <= 3) (4 - distance) / 4.0
