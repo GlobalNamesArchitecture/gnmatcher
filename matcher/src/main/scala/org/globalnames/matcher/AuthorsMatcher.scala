@@ -1,4 +1,4 @@
-package org.globalnames
+package org.globalnames.matcher
 
 case class Author(name: String)
 

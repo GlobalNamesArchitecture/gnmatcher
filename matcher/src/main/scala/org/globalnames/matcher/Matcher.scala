@@ -1,12 +1,11 @@
-package org
-package globalnames
+package org.globalnames.matcher
 
-import java.io.{ObjectInputStream, FileInputStream, ObjectOutputStream, FileOutputStream}
+import java.io.{FileInputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
 import java.util
 import java.util.Comparator
 
-import com.github.liblevenshtein.transducer.{Candidate => LCandidate, ITransducer, Algorithm}
 import com.github.liblevenshtein.transducer.factory.TransducerBuilder
+import com.github.liblevenshtein.transducer.{Algorithm, ITransducer, Candidate => LCandidate}
 
 import scala.collection.JavaConversions._
 
@@ -38,7 +37,7 @@ object Matcher {
     new Matcher(transducer)
   }
 
-  def apply(canonicalNames: Seq[String], maxDistance: Int) = {
+  def apply(canonicalNames: Seq[String], maxDistance: Int): Matcher = {
     val transducer: ITransducer[LCandidate] = {
       val tb = new TransducerBuilder()
         .algorithm(Algorithm.MERGE_AND_SPLIT)

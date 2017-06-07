@@ -1,4 +1,4 @@
-package org.globalnames;
+package org.globalnames.matcher;
 
 // https://github.com/KevinStern/software-and-algorithms/blob/master/src/main/java/blogspot/
 // software_and_algorithms/stern_library/string/DamerauLevenshteinAlgorithm.java

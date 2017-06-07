@@ -1,4 +1,5 @@
 package org.globalnames
+package matcher
 
 class AuthorsMatcherSpec extends SpecConfig {
   "calculate score" when {

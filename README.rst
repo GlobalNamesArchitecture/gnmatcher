@@ -44,7 +44,7 @@ To match input sequence against query run code as follows:
 .. code:: Scala
 
     $ sbt matcher/console
-    console> import org.globalnames.Matcher
+    console> import org.globalnames.matcher.Matcher
     console> val matcher = Matcher(Seq("Abdf", "Abce", "Dddd"), maxDistance = 2)
     console> matcher.transduce("Abc")
     res0: Seq[org.globalnames.Candidate] = Vector(Candidate(Abce,1), Candidate(Abdf,1))
@@ -63,7 +63,7 @@ as follows:
 .. code:: Scala
 
     $ sbt matcher/console
-    console> import org.globalnames.Matcher
+    console> import org.globalnames.matcher.Matcher
     console> val matcher = Matcher(Seq("Abdf", "Abce", "Dddd"), maxDistance = 2)
     console> matcher.dump(dumpPath = "matcher.ser")
     console> val matcherRestored = Matcher.restore(dumpPath = "matcher.ser")
