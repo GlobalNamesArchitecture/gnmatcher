@@ -15,28 +15,9 @@ class Matcher private (transducer: ITransducer[LCandidate]) {
       Candidate(c.term, c.distance)
     }
   }
-
-  def dump(dumpPath: String) = {
-    val fos = new FileOutputStream(dumpPath)
-    val oos = new ObjectOutputStream(fos)
-    oos.writeObject(transducer)
-    oos.close()
-  }
 }
 
 object Matcher {
-  def restore(dumpPath: String): Matcher = {
-    val transducer: ITransducer[LCandidate] = {
-      val fileIn = new FileInputStream(dumpPath)
-      val in = new ObjectInputStream(fileIn)
-      val e = in.readObject().asInstanceOf[ITransducer[LCandidate]]
-      in.close()
-      fileIn.close()
-      e
-    }
-    new Matcher(transducer)
-  }
-
   def apply(canonicalNames: Seq[String], maxDistance: Int): Matcher = {
     val transducer: ITransducer[LCandidate] = {
       val tb = new TransducerBuilder()
