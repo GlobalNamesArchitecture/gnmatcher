@@ -1,35 +1,64 @@
 package org.globalnames.matcher
 
-import java.io.{FileInputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
-import java.util
-import java.util.Comparator
-
 import com.github.liblevenshtein.transducer.factory.TransducerBuilder
 import com.github.liblevenshtein.transducer.{Algorithm, ITransducer, Candidate => LCandidate}
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
-class Matcher private (transducer: ITransducer[LCandidate]) {
-  def transduce(queryTerm: String): Seq[Candidate] = {
-    transducer.transduce(queryTerm).toVector.map { (c: LCandidate) =>
-      Candidate(c.term, c.distance)
+class Matcher private(transducerByWord: ITransducer[LCandidate],
+                      transducerByStem: ITransducer[LCandidate],
+                      canonicalLowerToFull: Map[String, Vector[String]]) {
+
+  def findMatches(word: String): Vector[Candidate] = {
+    val givenWordLower = word.toLowerCase
+    val givenWordPartsLower = givenWordLower.split("\\s+")
+    val candidates = transducerByWord.transduce(givenWordLower).asScala.toVector
+    val appropriateCandidates =
+      if (candidates.nonEmpty) candidates
+      else {
+        val candidates = transducerByStem.transduce(givenWordLower.toLowerCase).asScala.toVector
+        candidates.filter { foundWord =>
+            val foundWordStems = foundWord.term.split(" ").map { p => LatinStemmer.stemmize(p) }
+            foundWordStems.zip(givenWordPartsLower).forall { case (foundWordStem, givenWordPart) =>
+              givenWordPart.startsWith(foundWordStem.originalStem) ||
+                givenWordLower.startsWith(foundWordStem.mappedStem)
+            }
+          }
+      }
+    appropriateCandidates.flatMap { cand =>
+      canonicalLowerToFull(cand.term).map { full => Candidate(full, cand.distance) }
     }
   }
+
 }
 
 object Matcher {
-  def apply(canonicalNames: Seq[String], maxDistance: Int): Matcher = {
-    val transducer: ITransducer[LCandidate] = {
-      val tb = new TransducerBuilder()
-        .algorithm(Algorithm.MERGE_AND_SPLIT)
-        .defaultMaxDistance(maxDistance)
-      val dict = new util.ArrayList[String](canonicalNames)
-      dict.sort(new Comparator[String] {
-        override def compare(o1: String, o2: String): Int = o1.compareTo(o2)
-      })
-      tb.dictionary(dict, true)
-        .build()
-    }
-    new Matcher(transducer)
+
+  def apply(canonicalNames: Seq[String]): Matcher = {
+    val canonicalNamesTransducerMaxDistance = 1
+    val canonicalNamesStemsTransducerMaxDistance = 4
+    val dictionary = canonicalNames.map { _.toLowerCase }.sorted.asJava
+
+    val canonicalLowerToFull =
+      canonicalNames.foldLeft(Map.empty[String, Vector[String]].withDefaultValue(Vector())) {
+        case (mp, name) =>
+          val nameLower = name.toLowerCase
+          mp + (nameLower -> (name +: mp(nameLower)))
+      }
+
+    val canonicalNamesTransducer = new TransducerBuilder()
+      .algorithm(Algorithm.STANDARD)
+      .defaultMaxDistance(canonicalNamesTransducerMaxDistance)
+      .dictionary(dictionary, true)
+      .build[LCandidate]()
+
+    val canonicalNamesStemsTransducer = new TransducerBuilder()
+      .algorithm(Algorithm.STANDARD)
+      .defaultMaxDistance(canonicalNamesStemsTransducerMaxDistance)
+      .dictionary(dictionary, true)
+      .build[LCandidate]()
+
+    new Matcher(canonicalNamesTransducer, canonicalNamesStemsTransducer, canonicalLowerToFull)
   }
+
 }
