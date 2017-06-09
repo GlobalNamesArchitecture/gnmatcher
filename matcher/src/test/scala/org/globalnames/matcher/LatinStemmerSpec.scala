@@ -4,6 +4,8 @@ package matcher
 import scala.io.Source
 
 class LatinStemmerSpec extends SpecConfig {
+  import LatinStemmer.stemmize
+
   case class TestDataEntry(word: String, nounForm: String)
 
   val testDataEntries: Vector[TestDataEntry] =
@@ -15,9 +17,28 @@ class LatinStemmerSpec extends SpecConfig {
       }
       .toVector
 
-  "extract noun-form stems correctly from" in {
-    val stems = testDataEntries.map { tde => LatinStemmer.stem(tde.word) }
-    val expected = testDataEntries.map { _.nounForm }
-    expected.diff(stems) shouldBe empty
+  "correctly extract noun-form stems" in {
+    testDataEntries.foreach { tde =>
+      val word = stemmize(tde.word)
+      withClue(s"${tde.word}: ") { word.mappedStem shouldBe tde.nounForm }
+    }
+  }
+
+  "correctly extract original and mapped stems of exact size" in {
+    testDataEntries.foreach { tde =>
+      val word = stemmize(tde.word)
+      withClue(s"${word.originalStem} & ${word.mappedStem}: ") {
+        word.originalStem.length shouldBe word.mappedStem.length
+      }
+    }
+  }
+
+  "correctly extract noun-form suffixes" in {
+    testDataEntries.foreach { tde =>
+      val word = stemmize(tde.word)
+      withClue(s"$word: ") {
+        (word.originalStem + word.suffix) shouldBe tde.word
+      }
+    }
   }
 }

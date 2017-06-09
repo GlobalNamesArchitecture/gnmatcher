@@ -78,6 +78,8 @@ import scala.annotation.switch
   * 8.  (end)
   */
 object LatinStemmer {
+  case class Word(originalStem: String, mappedStem: String, suffix: String)
+
   private val queExceptions = Set(
     "atque", "quoque", "neque", "itaque", "absque", "apsque", "abusque", "adaeque", "adusque",
     "denique", "deque", "susque", "oblique", "peraeque", "plenisque", "quandoque", "quisque",
@@ -94,7 +96,7 @@ object LatinStemmer {
     "a", "e", "i", "o", "u"
   )
 
-  def stem(word: String): String = {
+  def stemmize(word: String): Word = {
     val sb = new StringBuilder(word)
 
     var sbIdx = 0
@@ -110,7 +112,7 @@ object LatinStemmer {
     val wordMapped = sb.toString
     val wordEndsWithQue = word.endsWith("que")
     if (wordEndsWithQue && queExceptions.contains(wordMapped)) {
-        wordMapped
+      Word(originalStem = word, mappedStem = wordMapped, suffix = "")
     } else {
       if (wordEndsWithQue) {
         sb.delete(sb.length - 3, sb.length)
@@ -127,7 +129,9 @@ object LatinStemmer {
           }
         }
       }
-      sb.toString()
+      val stem = sb.toString()
+      Word(originalStem = word.substring(0, stem.length), mappedStem = stem,
+           suffix = word.substring(stem.length))
     }
   }
 }
