@@ -69,7 +69,7 @@ val scalatest      = "org.scalatest"                  %% "scalatest"            
 /////////////////////// PROJECTS /////////////////////////
 
 lazy val `gnmatcher-root` = project.in(file("."))
-  .aggregate(matcher, examples, benchmark)
+  .aggregate(matcher, api, benchmark)
   .settings(noPublishingSettings: _*)
   .settings(
     crossScalaVersions := Seq("2.10.6", "2.11.8")
@@ -82,8 +82,6 @@ lazy val matcher = (project in file("./matcher"))
   .settings(
     name := "gnmatcher",
 
-    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
-    buildInfoPackage := "org.globalnames.matcher",
     test in assembly := {},
 
     libraryDependencies ++= Seq(liblevenshtein, scalatest),
@@ -95,12 +93,17 @@ lazy val matcher = (project in file("./matcher"))
       """.stripMargin
   )
 
-lazy val examples = (project in file("./examples/java-scala"))
+lazy val api = (project in file("./api"))
   .dependsOn(matcher)
   .settings(commonSettings: _*)
   .settings(noPublishingSettings: _*)
   .settings(
-    name := "gnmatcher-examples"
+    name := "gnmatcher-api",
+
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+    buildInfoPackage := "org.globalnames.matcher",
+
+    libraryDependencies ++= Seq()
   )
 
 lazy val benchmark = (project in file("./benchmark"))
