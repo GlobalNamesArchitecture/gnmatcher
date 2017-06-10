@@ -63,13 +63,18 @@ val noPublishingSettings = Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val liblevenshtein = "com.github.universal-automata"  %  "liblevenshtein"        % "3.0.0"
-val scalatest      = "org.scalatest"                  %% "scalatest"             % "2.2.6"    % Test
+lazy val versions = new {
+  val scalatest = "3.0.3"
+  val liblevenshtein = "3.0.0"
+}
+
+val liblevenshtein = "com.github.universal-automata"  %  "liblevenshtein"        % versions.liblevenshtein
+val scalatest      = "org.scalatest"                  %% "scalatest"             % versions.scalatest % Test
 
 /////////////////////// PROJECTS /////////////////////////
 
 lazy val `gnmatcher-root` = project.in(file("."))
-  .aggregate(matcher, api, benchmark)
+  .aggregate(matcher)
   .settings(noPublishingSettings: _*)
   .settings(
     crossScalaVersions := Seq("2.10.6", "2.11.8")
@@ -91,26 +96,4 @@ lazy val matcher = (project in file("./matcher"))
     initialCommands in console := """
       |import org.globalnames._
       """.stripMargin
-  )
-
-lazy val api = (project in file("./api"))
-  .dependsOn(matcher)
-  .settings(commonSettings: _*)
-  .settings(noPublishingSettings: _*)
-  .settings(
-    name := "gnmatcher-api",
-
-    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
-    buildInfoPackage := "org.globalnames.matcher",
-
-    libraryDependencies ++= Seq()
-  )
-
-lazy val benchmark = (project in file("./benchmark"))
-  .dependsOn(matcher)
-  .enablePlugins(JmhPlugin)
-  .settings(commonSettings: _*)
-  .settings(noPublishingSettings: _*)
-  .settings(
-    name := "gnmatcher-benchmark"
   )
