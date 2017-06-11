@@ -1,7 +1,12 @@
 import sbt.Keys._
 
 val commonSettings = Seq(
-  version := "0.1.2-SNAPSHOT",
+  version := {
+    val release = sys.props.isDefinedAt("release")
+    val version = "0.1.2"
+    if (release) version
+    else "0.1.2" + sys.props.get("buildNumber").map { "-" + _ }.getOrElse("") + "-SNAPSHOT"
+  },
   scalaVersion := "2.11.8",
   organization in ThisBuild := "org.globalnames",
   homepage := Some(new URL("http://globalnames.org/")),
@@ -33,11 +38,8 @@ val publishingSettings = Seq(
   useGpg := true,
   publishTo := {
     val nexus = "https://oss.sonatype.org/"
-    if (version.value.trim.endsWith("SNAPSHOT")) {
-      Some("snapshots" at nexus + "content/repositories/snapshots")
-    } else {
-      Some("releases" at nexus + "service/local/staging/deploy/maven2")
-    }
+    if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
+    else                  Some("releases" at nexus + "service/local/staging/deploy/maven2")
   },
   pomIncludeRepository := { _ => false },
   pomExtra :=
