@@ -4,6 +4,9 @@ import com.github.liblevenshtein.transducer.factory.TransducerBuilder
 import com.github.liblevenshtein.transducer.{Algorithm, ITransducer, Candidate => LCandidate}
 
 import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 class Matcher private(transducerByWord: ITransducer[LCandidate],
                       transducerByStem: ITransducer[LCandidate],
@@ -46,19 +49,28 @@ object Matcher {
           mp + (nameLower -> (name +: mp(nameLower)))
       }
 
-    val canonicalNamesTransducer = new TransducerBuilder()
-      .algorithm(Algorithm.STANDARD)
-      .defaultMaxDistance(canonicalNamesTransducerMaxDistance)
-      .dictionary(dictionary, true)
-      .build[LCandidate]()
+    val canonicalNamesTransducerFut = Future {
+      new TransducerBuilder()
+        .algorithm(Algorithm.STANDARD)
+        .defaultMaxDistance(canonicalNamesTransducerMaxDistance)
+        .dictionary(dictionary, true)
+        .build[LCandidate]()
+    }
 
-    val canonicalNamesStemsTransducer = new TransducerBuilder()
-      .algorithm(Algorithm.STANDARD)
-      .defaultMaxDistance(canonicalNamesStemsTransducerMaxDistance)
-      .dictionary(dictionary, true)
-      .build[LCandidate]()
+    val canonicalNamesStemsTransducerFut = Future {
+      new TransducerBuilder()
+        .algorithm(Algorithm.STANDARD)
+        .defaultMaxDistance(canonicalNamesStemsTransducerMaxDistance)
+        .dictionary(dictionary, true)
+        .build[LCandidate]()
+    }
 
-    new Matcher(canonicalNamesTransducer, canonicalNamesStemsTransducer, canonicalLowerToFull)
+    val matcherFut =
+      for {
+        cnt <- canonicalNamesTransducerFut
+        cnst <- canonicalNamesStemsTransducerFut
+      } yield new Matcher(cnt, cnst, canonicalLowerToFull)
+    Await.result(matcherFut, 30.minutes)
   }
 
 }
