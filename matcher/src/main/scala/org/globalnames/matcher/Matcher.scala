@@ -37,9 +37,9 @@ class Matcher private(transducerByWord: ITransducer[LCandidate],
 
 object Matcher {
 
-  def apply(canonicalNames: Seq[String]): Matcher = {
-    val canonicalNamesTransducerMaxDistance = 1
-    val canonicalNamesStemsTransducerMaxDistance = 4
+  def apply(canonicalNames: Seq[String],
+            canonicalNamesTransducerMaxDistance: Int = 1,
+            canonicalNamesStemsTransducerMaxDistance: Int = 2): Matcher = {
     val dictionary = canonicalNames.map { _.toLowerCase }.sorted.asJava
 
     val canonicalLowerToFull =
