@@ -5,7 +5,7 @@ val commonSettings = Seq(
     val release = sys.props.isDefinedAt("release")
     val version = "0.1.2"
     if (release) version
-    else "0.1.2" + sys.props.get("buildNumber").map { "-" + _ }.getOrElse("") + "-SNAPSHOT"
+    else version + sys.props.get("buildNumber").map { "-" + _ }.getOrElse("") + "-SNAPSHOT"
   },
   scalaVersion := "2.11.8",
   organization in ThisBuild := "org.globalnames",
