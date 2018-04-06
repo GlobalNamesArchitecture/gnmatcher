@@ -8,6 +8,7 @@ class MatcherSpec extends SpecConfig {
                               "Aaadonta constricta babelthuapi",
                               "Abacetus cyclomous",
                               "Abacetus cyclomus"),
+                          canonicalNamesTransducerMaxDistance = 1,
                           canonicalNamesStemsTransducerMaxDistance = 4)
     matcher.findMatches("Aaadonta angaurana") should contain only Candidate("Aaadonta angaurana", 0)
     matcher.findMatches("Aaadonta angauranA") should contain only Candidate("Aaadonta angaurana", 0)

@@ -7,6 +7,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import akka.http.impl.util._
 
 class Matcher private(transducerByWord: ITransducer[LCandidate],
                       transducerByStem: ITransducer[LCandidate],
@@ -19,14 +20,14 @@ class Matcher private(transducerByWord: ITransducer[LCandidate],
     val appropriateCandidates =
       if (candidates.nonEmpty) candidates
       else {
-        val candidates = transducerByStem.transduce(givenWordLower.toLowerCase).asScala.toVector
+        val candidates = transducerByStem.transduce(givenWordLower).asScala.toVector
         candidates.filter { foundWord =>
-            val foundWordStems = foundWord.term.split(" ").map { p => LatinStemmer.stemmize(p) }
-            foundWordStems.zip(givenWordPartsLower).forall { case (foundWordStem, givenWordPart) =>
-              givenWordPart.startsWith(foundWordStem.originalStem) ||
-                givenWordLower.startsWith(foundWordStem.mappedStem)
-            }
+          val foundWordStems = foundWord.term.fastSplit(' ').map { p => LatinStemmer.stemmize(p) }
+          foundWordStems.zip(givenWordPartsLower).forall { case (foundWordStem, givenWordPart) =>
+            givenWordPart.startsWith(foundWordStem.originalStem) ||
+              givenWordLower.startsWith(foundWordStem.mappedStem)
           }
+        }
       }
     appropriateCandidates.flatMap { cand =>
       canonicalLowerToFull(cand.term).map { full => Candidate(full, cand.distance) }
@@ -38,8 +39,8 @@ class Matcher private(transducerByWord: ITransducer[LCandidate],
 object Matcher {
 
   def apply(canonicalNames: Seq[String],
-            canonicalNamesTransducerMaxDistance: Int = 1,
-            canonicalNamesStemsTransducerMaxDistance: Int = 2): Matcher = {
+            canonicalNamesTransducerMaxDistance: Int,
+            canonicalNamesStemsTransducerMaxDistance: Int): Matcher = {
     val dictionary = canonicalNames.map { _.toLowerCase }.sorted.asJava
 
     val canonicalLowerToFull =
