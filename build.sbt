@@ -97,5 +97,6 @@ lazy val matcher = (project in file("./matcher"))
 
     initialCommands in console := """
       |import org.globalnames._
+      |import org.globalnames.matcher._
       """.stripMargin
   )
