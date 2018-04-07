@@ -7,10 +7,10 @@ val commonSettings = Seq(
     if (release) version
     else version + sys.props.get("buildNumber").map { "-" + _ }.getOrElse("") + "-SNAPSHOT"
   },
-  scalaVersion := "2.11.8",
+  scalaVersion := "2.12.6",
   organization in ThisBuild := "org.globalnames",
   homepage := Some(new URL("http://globalnames.org/")),
-  description := "Fast Liblevenshtein distance matcher for scientific names",
+  description := "Fast Levenshtein Automata matcher for scientific names",
   startYear := Some(2015),
   licenses := Seq("MIT" -> new URL("https://github.com/GlobalNamesArchitecture/gnmatcher/blob/master/LICENSE")),
   resolvers ++= Seq(
@@ -66,7 +66,7 @@ val noPublishingSettings = Seq(
 /////////////////////// DEPENDENCIES /////////////////////////
 
 lazy val versions = new {
-  val scalatest = "3.0.3"
+  val scalatest = "3.0.5"
   val liblevenshtein = "3.0.0"
 }
 
@@ -79,7 +79,7 @@ lazy val `gnmatcher-root` = project.in(file("."))
   .aggregate(matcher)
   .settings(noPublishingSettings: _*)
   .settings(
-    crossScalaVersions := Seq("2.10.6", "2.11.8")
+    crossScalaVersions := Seq("2.11.8", "2.12.6")
   )
 
 lazy val matcher = (project in file("./matcher"))
