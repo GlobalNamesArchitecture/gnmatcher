@@ -14,23 +14,28 @@ class Matcher private(transducerByWord: ITransducer[LCandidate],
                       canonicalLowerToFull: Map[String, Vector[String]]) {
 
   def findMatches(word: String): Vector[Candidate] = {
-    val givenWordLower = word.toLowerCase
-    val givenWordPartsLower = givenWordLower.split("\\s+")
-    val candidates = transducerByWord.transduce(givenWordLower).asScala.toVector
-    val appropriateCandidates =
-      if (candidates.nonEmpty) candidates
-      else {
-        val candidates = transducerByStem.transduce(givenWordLower).asScala.toVector
-        candidates.filter { foundWord =>
-          val foundWordStems = foundWord.term.fastSplit(' ').map { p => LatinStemmer.stemmize(p) }
-          foundWordStems.zip(givenWordPartsLower).forall { case (foundWordStem, givenWordPart) =>
-            givenWordPart.startsWith(foundWordStem.originalStem) ||
-              givenWordLower.startsWith(foundWordStem.mappedStem)
+    if (word.isEmpty) {
+      Vector.empty
+    } else {
+      val givenWordLower = word.toLowerCase
+      val givenWordPartsLower = givenWordLower.split("\\s+")
+
+      val candidates = transducerByWord.transduce(givenWordLower).asScala.toVector
+      val appropriateCandidates =
+        if (candidates.nonEmpty) candidates
+        else {
+          val candidates = transducerByStem.transduce(givenWordLower).asScala.toVector
+          candidates.filter { foundWord =>
+            val foundWordStems = foundWord.term.fastSplit(' ').map { p => LatinStemmer.stemmize(p) }
+            foundWordStems.zip(givenWordPartsLower).forall { case (foundWordStem, givenWordPart) =>
+              givenWordPart.startsWith(foundWordStem.originalStem) ||
+                givenWordLower.startsWith(foundWordStem.mappedStem)
+            }
           }
         }
+      appropriateCandidates.flatMap { cand =>
+        canonicalLowerToFull(cand.term).map { full => Candidate(full, cand.distance) }
       }
-    appropriateCandidates.flatMap { cand =>
-      canonicalLowerToFull(cand.term).map { full => Candidate(full, cand.distance) }
     }
   }
 
