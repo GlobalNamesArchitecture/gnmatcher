@@ -7,7 +7,7 @@ val commonSettings = Seq(
     if (release) version
     else version + sys.props.get("buildNumber").map { "-" + _ }.getOrElse("") + "-SNAPSHOT"
   },
-  scalaVersion := "2.12.6",
+  scalaVersion := "2.11.12",
   organization in ThisBuild := "org.globalnames",
   homepage := Some(new URL("http://globalnames.org/")),
   description := "Fast Levenshtein Automata matcher for scientific names",
@@ -19,8 +19,8 @@ val commonSettings = Seq(
   ),
   javacOptions ++= Seq(
     "-encoding", "UTF-8",
-    "-source", "1.6",
-    "-target", "1.6",
+    "-source", "1.8",
+    "-target", "1.8",
     "-Xlint:unchecked",
     "-Xlint:deprecation"),
   scalacOptions ++= List(
@@ -30,7 +30,7 @@ val commonSettings = Seq(
     "-deprecation",
     "-Xlint",
     "-language:_",
-    "-target:jvm-1.6",
+    "-target:jvm-1.8",
     "-Xlog-reflective-calls"))
 
 val publishingSettings = Seq(
