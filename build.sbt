@@ -3,7 +3,7 @@ import sbt.Keys._
 val commonSettings = Seq(
   version := {
     val release = sys.props.isDefinedAt("release")
-    val version = "0.1.2"
+    val version = "0.1.3"
     if (release) version
     else version + sys.props.get("buildNumber").map { "-" + _ }.getOrElse("") + "-SNAPSHOT"
   },
