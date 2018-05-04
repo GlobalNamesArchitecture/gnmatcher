@@ -7,34 +7,21 @@ import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import akka.http.impl.util._
 
-class Matcher private(transducerByWord: ITransducer[LCandidate],
+class Matcher private(transducerByVerbatim: ITransducer[LCandidate],
                       transducerByStem: ITransducer[LCandidate],
-                      canonicalLowerToFull: Map[String, Vector[String]]) {
+                      canonicalNamesDataSources: Map[String, Set[Int]],
+                      canonicalStemsLowerToFullMap: Map[String, Vector[String]],
+                      canonicalVerbatimLowerToFullMap: Map[String, Vector[String]]) {
 
-  def findMatches(word: String): Vector[Candidate] = {
-    if (word.isEmpty) {
+  def findMatches(verbatim: String, dataSources: Set[Int]): Vector[Candidate] = {
+    val givenWordSanitized = Matcher.sanitizeWord(verbatim)
+
+    if (givenWordSanitized.isEmpty) {
       Vector.empty
     } else {
-      val givenWordLower = word.toLowerCase
-      val givenWordPartsLower = givenWordLower.split("\\s+")
+      val givenWordLower = givenWordSanitized.toLowerCase
 
-      val candidates = transducerByWord.transduce(givenWordLower).asScala.toVector
-      val appropriateCandidates =
-        if (candidates.nonEmpty) candidates
-        else {
-          val candidates = transducerByStem.transduce(givenWordLower).asScala.toVector
-          candidates.filter { foundWord =>
-            val foundWordStems = foundWord.term.fastSplit(' ').map { p => LatinStemmer.stemmize(p) }
-            foundWordStems.zip(givenWordPartsLower).forall { case (foundWordStem, givenWordPart) =>
-              givenWordPart.startsWith(foundWordStem.originalStem) ||
-                givenWordLower.startsWith(foundWordStem.mappedStem)
-            }
-          }
-        }
-      appropriateCandidates.flatMap { cand =>
-        canonicalLowerToFull(cand.term).map { full => Candidate(full, cand.distance) }
       if (givenWordLower.indexOf(' ') == -1) {
         for {
           wordFull <- canonicalVerbatimLowerToFullMap(givenWordLower)
@@ -42,6 +29,24 @@ class Matcher private(transducerByWord: ITransducer[LCandidate],
           if dataSources.isEmpty || dataSources.contains(wordDataSourceId)
         } yield Candidate(wordFull, wordDataSourceId, None, None)
       } else {
+        val givenWordLowerStemmized = Matcher.stemmize(givenWordLower)
+        val candidatesByStem = transducerByStem.transduce(givenWordLowerStemmized).asScala.toVector
+        val candidatesByStemFiltered = for {
+          candidate <- candidatesByStem
+          wordFull <- canonicalStemsLowerToFullMap(candidate.term)
+          wordDataSourceId <- canonicalNamesDataSources.getOrElse(wordFull, Set())
+          if dataSources.isEmpty || dataSources.contains(wordDataSourceId)
+        } yield Candidate(wordFull, wordDataSourceId, None, Some(wordDataSourceId))
+
+        val candidatesByVerbatim = transducerByVerbatim.transduce(givenWordLower).asScala.toVector
+        val candidatesByVerbatimFiltered = for {
+          candidate <- candidatesByVerbatim
+          wordFull <- canonicalStemsLowerToFullMap(candidate.term)
+          wordDataSourceId <- canonicalNamesDataSources.getOrElse(wordFull, Set())
+          if dataSources.isEmpty || dataSources.contains(wordDataSourceId)
+        } yield Candidate(wordFull, wordDataSourceId, Some(candidate.distance), None)
+
+        candidatesByStemFiltered ++ candidatesByVerbatimFiltered
       }
     }
   }
@@ -50,23 +55,40 @@ class Matcher private(transducerByWord: ITransducer[LCandidate],
 
 object Matcher {
 
-  def apply(canonicalNames: Seq[String],
-            canonicalNamesTransducerMaxDistance: Int,
-            canonicalNamesStemsTransducerMaxDistance: Int): Matcher = {
-    val dictionary = canonicalNames.map { _.toLowerCase }.sorted.asJava
+  def sanitizeWord(word: String): String = {
+    word.trim.replaceAll("\\s+", " ")
+  }
 
-    val canonicalLowerToFull =
-      canonicalNames.foldLeft(Map.empty[String, Vector[String]].withDefaultValue(Vector())) {
+  def stemmize(word: String): String = {
+    val nameLowerParts = word.toLowerCase.split(" ")
+    nameLowerParts.map { part => LatinStemmer.stemmize(part).mappedStem }.mkString(" ")
+  }
+
+  def apply(canonicalNames: Map[String, Set[Int]]): Matcher = {
+    val canonicalNamesTransducerMaxDistance = 2
+    val canonicalNamesStemsTransducerMaxDistance = 2
+
+    val canonicalNamesSanitized = canonicalNames.keys.map { sanitizeWord }
+
+    val canonicalVerbatimLowerToFullMap =
+      canonicalNamesSanitized.foldLeft(Map.empty[String, Vector[String]].withDefaultValue(Vector())) {
         case (mp, name) =>
           val nameLower = name.toLowerCase
           mp + (nameLower -> (name +: mp(nameLower)))
+      }
+
+    val canonicalStemsLowerToFullMap =
+      canonicalNamesSanitized.foldLeft(Map.empty[String, Vector[String]].withDefaultValue(Vector())) {
+        case (mp, name) =>
+          val nameStemmized = stemmize(name)
+          mp + (nameStemmized -> (name +: mp(nameStemmized)))
       }
 
     val canonicalNamesTransducerFut = Future {
       new TransducerBuilder()
         .algorithm(Algorithm.STANDARD)
         .defaultMaxDistance(canonicalNamesTransducerMaxDistance)
-        .dictionary(dictionary, true)
+        .dictionary(canonicalVerbatimLowerToFullMap.keys.toVector.sorted.asJava, true)
         .build[LCandidate]()
     }
 
@@ -74,7 +96,7 @@ object Matcher {
       new TransducerBuilder()
         .algorithm(Algorithm.STANDARD)
         .defaultMaxDistance(canonicalNamesStemsTransducerMaxDistance)
-        .dictionary(dictionary, true)
+        .dictionary(canonicalStemsLowerToFullMap.keys.toVector.sorted.asJava, true)
         .build[LCandidate]()
     }
 
@@ -82,8 +104,9 @@ object Matcher {
       for {
         cnt <- canonicalNamesTransducerFut
         cnst <- canonicalNamesStemsTransducerFut
-      } yield new Matcher(cnt, cnst, canonicalLowerToFull)
-    Await.result(matcherFut, 30.minutes)
+      } yield new Matcher(cnt, cnst, canonicalNames,
+                          canonicalStemsLowerToFullMap, canonicalVerbatimLowerToFullMap)
+    Await.result(matcherFut, 60.minutes)
   }
 
 }
