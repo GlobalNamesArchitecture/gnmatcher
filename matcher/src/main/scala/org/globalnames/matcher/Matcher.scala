@@ -35,6 +35,13 @@ class Matcher private(transducerByWord: ITransducer[LCandidate],
         }
       appropriateCandidates.flatMap { cand =>
         canonicalLowerToFull(cand.term).map { full => Candidate(full, cand.distance) }
+      if (givenWordLower.indexOf(' ') == -1) {
+        for {
+          wordFull <- canonicalVerbatimLowerToFullMap(givenWordLower)
+          wordDataSourceId <- canonicalNamesDataSources.getOrElse(wordFull, Set())
+          if dataSources.isEmpty || dataSources.contains(wordDataSourceId)
+        } yield Candidate(wordFull, wordDataSourceId, None, None)
+      } else {
       }
     }
   }
