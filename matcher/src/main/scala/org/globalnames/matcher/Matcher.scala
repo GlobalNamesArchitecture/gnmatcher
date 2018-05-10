@@ -1,56 +1,22 @@
 package org.globalnames.matcher
 
-import com.github.liblevenshtein.transducer.factory.TransducerBuilder
-import com.github.liblevenshtein.transducer.{Algorithm, ITransducer, Candidate => LCandidate}
+import java.util.Properties
 
-import scala.collection.JavaConverters._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import org.python.core._
+import org.python.util.PythonInterpreter
 
-class Matcher private(transducerByVerbatim: ITransducer[LCandidate],
-                      transducerByStem: ITransducer[LCandidate],
-                      canonicalNamesDataSources: Map[String, Set[Int]],
-                      canonicalStemsLowerToFullMap: Map[String, Vector[String]],
-                      canonicalVerbatimLowerToFullMap: Map[String, Vector[String]]) {
+import scala.io.Source
 
+class Matcher private(finderInstance: PyInstance) {
   def findMatches(verbatim: String, dataSources: Set[Int]): Vector[Candidate] = {
-    val givenWordSanitized = Matcher.sanitizeWord(verbatim)
+    val candidates: Array[String] =
+      finderInstance.invoke(
+        "find_all_matches",
+        new PyString(verbatim)
+      ).__tojava__(classOf[Array[String]]).asInstanceOf[Array[String]]
 
-    if (givenWordSanitized.isEmpty) {
-      Vector.empty
-    } else {
-      val givenWordLower = givenWordSanitized.toLowerCase
-
-      if (givenWordLower.indexOf(' ') == -1) {
-        for {
-          wordFull <- canonicalVerbatimLowerToFullMap(givenWordLower)
-          wordDataSourceId <- canonicalNamesDataSources.getOrElse(wordFull, Set())
-          if dataSources.isEmpty || dataSources.contains(wordDataSourceId)
-        } yield Candidate(wordFull, wordDataSourceId, None, None)
-      } else {
-        val givenWordLowerStemmized = Matcher.stemmize(givenWordLower)
-        val candidatesByStem = transducerByStem.transduce(givenWordLowerStemmized).asScala.toVector
-        val candidatesByStemFiltered = for {
-          candidate <- candidatesByStem
-          wordFull <- canonicalStemsLowerToFullMap(candidate.term)
-          wordDataSourceId <- canonicalNamesDataSources.getOrElse(wordFull, Set())
-          if dataSources.isEmpty || dataSources.contains(wordDataSourceId)
-        } yield Candidate(wordFull, wordDataSourceId, None, Some(wordDataSourceId))
-
-        val candidatesByVerbatim = transducerByVerbatim.transduce(givenWordLower).asScala.toVector
-        val candidatesByVerbatimFiltered = for {
-          candidate <- candidatesByVerbatim
-          wordFull <- canonicalStemsLowerToFullMap(candidate.term)
-          wordDataSourceId <- canonicalNamesDataSources.getOrElse(wordFull, Set())
-          if dataSources.isEmpty || dataSources.contains(wordDataSourceId)
-        } yield Candidate(wordFull, wordDataSourceId, Some(candidate.distance), None)
-
-        candidatesByStemFiltered ++ candidatesByVerbatimFiltered
-      }
-    }
+    candidates.map { cand => Candidate(cand, 1, None, None) }.toVector
   }
-
 }
 
 object Matcher {
@@ -65,48 +31,40 @@ object Matcher {
   }
 
   def apply(canonicalNames: Map[String, Set[Int]]): Matcher = {
-    val canonicalNamesTransducerMaxDistance = 2
-    val canonicalNamesStemsTransducerMaxDistance = 2
+    val props = new Properties()
+    props.put("python.home", "/home/amyltsev/.ivy2/cache/org.python/jython-standalone/jars/")
+    // Used to prevent: console: Failed to install '': java.nio.charset.UnsupportedCharsetException: cp0.
+    props.put("python.console.encoding", "UTF-8")
+    //don't respect java accessibility, so that we can access protected members on subclasses
+    props.put("python.security.respectJavaAccessibility", "false")
+    props.put("python.import.site", "false")
 
-    val canonicalNamesSanitized = canonicalNames.keys.map { sanitizeWord }
+    PythonInterpreter.initialize(System.getProperties, props, Array[String]())
+    val interpreter = new PythonInterpreter()
 
-    val canonicalVerbatimLowerToFullMap =
-      canonicalNamesSanitized.foldLeft(Map.empty[String, Vector[String]].withDefaultValue(Vector())) {
-        case (mp, name) =>
-          val nameLower = name.toLowerCase
-          mp + (nameLower -> (name +: mp(nameLower)))
+    val filePy =
+      Source.fromURL(getClass.getClassLoader.getResource("levenshtein_py/automata.py"))
+        .getLines.toVector.mkString("\n")
+    interpreter.exec(filePy)
+
+    val wordDatasources = new PyDictionary()
+    for ((canonicalName, dataSources) <- canonicalNames) {
+      try {
+        val psPy = Py.newStringOrUnicode(canonicalName)
+        val dsPy = new PySet()
+        for (ds <- dataSources) {
+          dsPy.__add__(Py.newInteger(ds))
+        }
+        wordDatasources.__setitem__(psPy, dsPy)
+      } catch {
+        case ex: Exception => ()
       }
-
-    val canonicalStemsLowerToFullMap =
-      canonicalNamesSanitized.foldLeft(Map.empty[String, Vector[String]].withDefaultValue(Vector())) {
-        case (mp, name) =>
-          val nameStemmized = stemmize(name)
-          mp + (nameStemmized -> (name +: mp(nameStemmized)))
-      }
-
-    val canonicalNamesTransducerFut = Future {
-      new TransducerBuilder()
-        .algorithm(Algorithm.STANDARD)
-        .defaultMaxDistance(canonicalNamesTransducerMaxDistance)
-        .dictionary(canonicalVerbatimLowerToFullMap.keys.toVector.sorted.asJava, true)
-        .build[LCandidate]()
     }
 
-    val canonicalNamesStemsTransducerFut = Future {
-      new TransducerBuilder()
-        .algorithm(Algorithm.STANDARD)
-        .defaultMaxDistance(canonicalNamesStemsTransducerMaxDistance)
-        .dictionary(canonicalStemsLowerToFullMap.keys.toVector.sorted.asJava, true)
-        .build[LCandidate]()
-    }
+    val finderInstance: PyInstance =
+      interpreter.get("Finder").__call__(wordDatasources).asInstanceOf[PyInstance]
 
-    val matcherFut =
-      for {
-        cnt <- canonicalNamesTransducerFut
-        cnst <- canonicalNamesStemsTransducerFut
-      } yield new Matcher(cnt, cnst, canonicalNames,
-                          canonicalStemsLowerToFullMap, canonicalVerbatimLowerToFullMap)
-    Await.result(matcherFut, 60.minutes)
+    new Matcher(finderInstance)
   }
 
 }

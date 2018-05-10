@@ -68,9 +68,11 @@ val noPublishingSettings = Seq(
 lazy val versions = new {
   val scalatest = "3.0.5"
   val liblevenshtein = "3.0.0"
+  val jython = "2.7.1"
 }
 
 val liblevenshtein = "com.github.universal-automata"  %  "liblevenshtein"        % versions.liblevenshtein
+val jython         = "org.python"                     %  "jython-standalone"     % versions.jython
 val scalatest      = "org.scalatest"                  %% "scalatest"             % versions.scalatest % Test
 
 /////////////////////// PROJECTS /////////////////////////
@@ -91,7 +93,7 @@ lazy val matcher = (project in file("./matcher"))
 
     test in assembly := {},
 
-    libraryDependencies ++= Seq(liblevenshtein, scalatest),
+    libraryDependencies ++= Seq(liblevenshtein, jython, scalatest),
 
     scalacOptions in Test ++= Seq("-Yrangepos"),
 
