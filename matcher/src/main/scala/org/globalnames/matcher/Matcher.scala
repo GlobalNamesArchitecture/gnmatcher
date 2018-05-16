@@ -9,13 +9,18 @@ import scala.io.Source
 
 class Matcher private(finderInstance: PyInstance) {
   def findMatches(verbatim: String, dataSources: Set[Int]): Vector[Candidate] = {
+    val dataSourcesArr = dataSources.map { ds => Py.newInteger(ds).asInstanceOf[PyObject] }.toArray
+    val dataSourcesPy = new PySet(dataSourcesArr)
+
     val candidates: Array[String] =
       finderInstance.invoke(
         "find_all_matches",
-        new PyString(verbatim)
+        new PyString(verbatim),
+        dataSourcesPy
       ).__tojava__(classOf[Array[String]]).asInstanceOf[Array[String]]
 
-    candidates.map { cand => Candidate(cand, 1, None, None) }.toVector
+    val result = candidates.map { cand => Candidate(cand, 1, None, None) }.toVector
+    result
   }
 }
 
@@ -51,10 +56,8 @@ object Matcher {
     for ((canonicalName, dataSources) <- canonicalNames) {
       try {
         val psPy = Py.newStringOrUnicode(canonicalName)
-        val dsPy = new PySet()
-        for (ds <- dataSources) {
-          dsPy.__add__(Py.newInteger(ds))
-        }
+        val dsPyInts = dataSources.map { ds => Py.newInteger(ds).asInstanceOf[PyObject]}.toArray
+        val dsPy = new PySet(dsPyInts)
         wordDatasources.__setitem__(psPy, dsPy)
       } catch {
         case ex: Exception => ()
