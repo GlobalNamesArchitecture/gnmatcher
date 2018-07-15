@@ -152,8 +152,15 @@ public class MDAG {
         if (sourceNode != null) {
             String previousString = "";
 
+            int counter = 0;
+
             //Add all the Strings in strCollection to the MDAG.
             for (String currentString : strCollection) {
+                counter++;
+                if (counter > 0 && counter % 1000 == 0) {
+                    System.out.println(counter);
+                }
+
                 int mpsIndex = calculateMinimizationProcessingStartIndex(previousString, currentString);
 
                 //If the transition path of the previousString needs to be examined for minimization or 
