@@ -92,7 +92,7 @@ object LatinStemmer {
 
   private val nounSuffixes = Seq(
     "ibus", "ius",
-    "ae", "am", "as", "em", "es", "ia", "is", "nt", "os", "ud", "um", "us",
+    "ae", "am", "as", "em", "es", "ia", "ii", "is", "nt", "os", "ud", "um", "us",
     "a", "e", "i", "o", "u"
   )
 
