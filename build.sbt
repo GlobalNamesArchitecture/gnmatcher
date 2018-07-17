@@ -101,7 +101,8 @@ lazy val matcher = (project in file("./matcher"))
 
     test in assembly := {},
 
-    libraryDependencies ++= Seq(scalaz, pprint, logback, liblevenshtein, jython, scalatest),
+    libraryDependencies ++= Seq(scalaz, pprint, scalaLogging, logback, liblevenshtein, jython,
+                                scalatest),
 
     scalacOptions in Test ++= Seq("-Yrangepos"),
 
