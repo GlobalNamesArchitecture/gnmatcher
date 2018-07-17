@@ -69,11 +69,19 @@ lazy val versions = new {
   val scalatest = "3.0.5"
   val liblevenshtein = "3.0.0"
   val jython = "2.7.1"
+  val scalaz = "7.2.21"
+  val pprint = "0.5.3"
+  val logback = "1.2.3"
+  val scalaLogging = "3.9.0"
 }
 
 val liblevenshtein = "com.github.universal-automata"  %  "liblevenshtein"        % versions.liblevenshtein
 val jython         = "org.python"                     %  "jython-standalone"     % versions.jython
 val scalatest      = "org.scalatest"                  %% "scalatest"             % versions.scalatest % Test
+val scalaz         = "org.scalaz"                     %% "scalaz-core"           % versions.scalaz
+val pprint         = "com.lihaoyi"                    %% "pprint"                % versions.pprint
+val logback        = "ch.qos.logback"                 %  "logback-classic"       % versions.logback
+val scalaLogging   = "com.typesafe.scala-logging"     %% "scala-logging"         % versions.scalaLogging
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -93,7 +101,7 @@ lazy val matcher = (project in file("./matcher"))
 
     test in assembly := {},
 
-    libraryDependencies ++= Seq(liblevenshtein, jython, scalatest),
+    libraryDependencies ++= Seq(scalaz, pprint, logback, liblevenshtein, jython, scalatest),
 
     scalacOptions in Test ++= Seq("-Yrangepos"),
 
