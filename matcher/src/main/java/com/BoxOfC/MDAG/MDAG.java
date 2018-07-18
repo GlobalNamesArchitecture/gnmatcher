@@ -139,7 +139,9 @@ public class MDAG {
      * @param strCollection     a {@link java.util.Collection} containing Strings that the MDAG will contain
      */
     public MDAG(Collection<String> strCollection) {
-        addStrings(strCollection);
+        if (!strCollection.isEmpty()) {
+            addStrings(strCollection);
+        }
     }
 
 
