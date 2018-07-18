@@ -4,11 +4,11 @@ package matcher
 import akka.http.impl.util.EnhancedString
 import com.BoxOfC.LevenshteinAutomaton.LevenshteinAutomaton
 import com.BoxOfC.MDAG.MDAG
+import com.typesafe.scalalogging.Logger
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
 import scalaz.syntax.std.option._
 import scalaz.syntax.std.boolean._
 
@@ -38,13 +38,15 @@ class StemMatcher private(wordToDatasources: Map[String, Set[Int]],
 }
 
 object StemMatcher {
+  private[StemMatcher] val logger = Logger[StemMatcher]
+
   def apply(wordToDatasources: Map[String, Set[Int]]): StemMatcher = {
     val wordStemToWords = mutable.Map.empty[String, Set[String]]
     val wordStems = ArrayBuffer[String]()
 
     for (((word, _), idx) <- wordToDatasources.zipWithIndex) {
       if (idx > 0 && idx % 10000 == 0) {
-        println(s"Stem matcher (progress): $idx")
+        logger.info(s"Stem matcher (progress): $idx")
       }
 
       val wordStem = transform(word)

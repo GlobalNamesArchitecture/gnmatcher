@@ -3,11 +3,11 @@ package matcher
 
 import com.BoxOfC.LevenshteinAutomaton.LevenshteinAutomaton
 import com.BoxOfC.MDAG.MDAG
+import com.typesafe.scalalogging.Logger
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
 import scalaz.syntax.std.option._
 
 private[matcher]
@@ -39,13 +39,15 @@ class VerbatimMatcher(wordToDatasources: Map[String, Set[Int]],
 }
 
 object VerbatimMatcher {
+  private[VerbatimMatcher] val logger = Logger[VerbatimMatcher]
+
   def apply(wordToDatasources: Map[String, Set[Int]]): VerbatimMatcher = {
     val wordVerbatimToWords = mutable.Map.empty[String, Set[String]]
     val wordVerbatims = ArrayBuffer[String]()
 
     for (((word, _), idx) <- wordToDatasources.zipWithIndex) {
       if (idx > 0 && idx % 10000 == 0) {
-        println(s"Verbatim matcher (progress): $idx")
+        logger.info(s"Verbatim matcher (progress): $idx")
       }
 
       val wordVerbatim = transform(word)
