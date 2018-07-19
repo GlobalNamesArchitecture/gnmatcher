@@ -3,9 +3,8 @@ package org.globalnames.matcher
 import com.typesafe.scalalogging.Logger
 
 
-class Matcher private(nameToDatasourceIdsMap: Map[String, Set[Int]],
-                      verbatimMatcher: VerbatimMatcher,
-                      stemMatcher: StemMatcher) {
+class SimpleMatcher private(verbatimMatcher: VerbatimMatcher,
+                            stemMatcher: StemMatcher) {
 
   def findMatches(word: String, dataSources: Set[Int]): Vector[Candidate] = {
     val matchesByStem = stemMatcher.findMatches(word, dataSources)
@@ -15,6 +14,26 @@ class Matcher private(nameToDatasourceIdsMap: Map[String, Set[Int]],
       val matchesByVerbatim = verbatimMatcher.findMatches(word, dataSources)
       matchesByVerbatim
     }
+  }
+}
+
+object SimpleMatcher {
+  def apply(verbatimMatcher: VerbatimMatcher, stemMatcher: StemMatcher): SimpleMatcher = {
+    new SimpleMatcher(verbatimMatcher, stemMatcher)
+  }
+}
+
+class Matcher(simpleMatcher: SimpleMatcher,
+              abbreviationMatcher: AbbreviationMatcher) {
+  def findMatches(word: String, dataSources: Set[Int]): Vector[Candidate] = {
+    val finder: (String, Set[Int]) => Vector[Candidate] =
+      if (AbbreviationMatcher.transform(word).valid) {
+        abbreviationMatcher.findMatches
+      } else {
+        simpleMatcher.findMatches
+      }
+
+    finder(word, dataSources)
   }
 }
 
@@ -30,6 +49,12 @@ object Matcher {
     val verbatimMatcher = VerbatimMatcher(nameToDatasourceIdsMap)
     logger.info("VerbatimMatcher created")
 
-    new Matcher(nameToDatasourceIdsMap, verbatimMatcher, stemMatcher)
+    logger.info("Creating AbbreviationMatcher")
+    val abbreviationMatcher = AbbreviationMatcher(nameToDatasourceIdsMap)
+    logger.info("AbbreviationMatcher created")
+
+    val simpleMatcher = SimpleMatcher(verbatimMatcher, stemMatcher)
+    val matcher = new Matcher(simpleMatcher, abbreviationMatcher)
+    matcher
   }
 }
