@@ -4,22 +4,26 @@ package matcher
 import com.BoxOfC.LevenshteinAutomaton.LevenshteinAutomaton
 import com.BoxOfC.MDAG.MDAG
 import com.typesafe.scalalogging.Logger
+import org.globalnames.matcher.util._
+import scalaz.syntax.std.option._
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scalaz.syntax.std.option._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 private[matcher]
 class VerbatimMatcher(wordToDatasources: Map[String, Set[Int]],
                       wordVerbatimToWords: mutable.Map[String, Set[String]],
-                      mdag: MDAG) {
+                      mdagFut: Future[MDAG]) {
   private val maxEditDistance = 2
 
   def findMatches(word: String, dataSources: Set[Int]): Vector[Candidate] = {
     val wordVerbatim = VerbatimMatcher.transform(word)
     val wordStem = StemMatcher.transform(word)
-    val verbatimMatches = LevenshteinAutomaton.tableFuzzySearch(maxEditDistance, wordVerbatim, mdag)
+    val verbatimMatches =
+      LevenshteinAutomaton.tableFuzzySearch(maxEditDistance, wordVerbatim, mdagFut.valueOrEmpty)
 
     val result = for {
       verbatimMatch <- verbatimMatches.toVector
@@ -56,7 +60,7 @@ object VerbatimMatcher {
         wordVerbatim -> (wordVerbatimToWords.getOrElse(wordVerbatim, Set()) + word)
     }
 
-    val mdag = new MDAG(wordVerbatims.sorted)
+    val mdag = Future { new MDAG(wordVerbatims.sorted) }
     val vm = new VerbatimMatcher(wordToDatasources, wordVerbatimToWords, mdag)
     vm
   }

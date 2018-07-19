@@ -5,23 +5,27 @@ import akka.http.impl.util.EnhancedString
 import com.BoxOfC.LevenshteinAutomaton.LevenshteinAutomaton
 import com.BoxOfC.MDAG.MDAG
 import com.typesafe.scalalogging.Logger
+import org.globalnames.matcher.util._
+import scalaz.syntax.std.boolean._
+import scalaz.syntax.std.option._
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scalaz.syntax.std.option._
-import scalaz.syntax.std.boolean._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 private[matcher]
 class StemMatcher private(wordToDatasources: Map[String, Set[Int]],
                           wordStemToWords: mutable.Map[String, Set[String]],
-                          mdag: MDAG) {
+                          mdagFut: Future[MDAG]) {
 
   private val maxEditDistance = 2
 
   def findMatches(word: String, dataSources: Set[Int]): Vector[Candidate] = {
     val wordStem = StemMatcher.transform(word)
-    val stemMatches = LevenshteinAutomaton.tableFuzzySearch(maxEditDistance, wordStem, mdag)
+    val stemMatches =
+      LevenshteinAutomaton.tableFuzzySearch(maxEditDistance, wordStem, mdagFut.valueOrEmpty)
 
     val result = for {
       stemMatch <- stemMatches.toVector
@@ -54,8 +58,8 @@ object StemMatcher {
       wordStemToWords += wordStem -> (wordStemToWords.getOrElse(wordStem, Set()) + word)
     }
 
-    val mdag = new MDAG(wordStems.sorted)
-    val sm = new StemMatcher(wordToDatasources, wordStemToWords, mdag)
+    val mdagFut = Future { new MDAG(wordStems.sorted) }
+    val sm = new StemMatcher(wordToDatasources, wordStemToWords, mdagFut)
     sm
   }
 
