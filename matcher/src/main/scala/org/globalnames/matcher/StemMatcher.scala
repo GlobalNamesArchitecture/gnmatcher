@@ -30,9 +30,12 @@ class StemMatcher private(wordToDatasources: Map[String, Set[Int]],
     val result = for {
       stemMatch <- stemMatches.toVector
       fullWord <- wordStemToWords(stemMatch)
-      fullWordDataSource <- wordToDatasources(fullWord)
-      if dataSources.isEmpty || dataSources.contains(fullWordDataSource)
-    } yield Candidate(stem = stemMatch, term = fullWord, dataSourceId = fullWordDataSource,
+      fullWordDataSourcesFound = {
+        val ds = wordToDatasources(fullWord)
+        dataSources.isEmpty ? ds | ds.intersect(dataSources)
+      }
+      if fullWordDataSourcesFound.nonEmpty
+    } yield Candidate(stem = stemMatch, term = fullWord, dataSourceIds = fullWordDataSourcesFound,
                       verbatimEditDistance =
                         LevenshteinAutomaton.computeEditDistance(word, fullWord).some,
                       stemEditDistance =

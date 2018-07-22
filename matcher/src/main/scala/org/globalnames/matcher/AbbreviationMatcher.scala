@@ -4,6 +4,7 @@ package matcher
 import akka.http.impl.util.EnhancedString
 import com.BoxOfC.LevenshteinAutomaton.LevenshteinAutomaton
 import com.typesafe.scalalogging.Logger
+import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
 
 import scala.collection.mutable
@@ -27,11 +28,14 @@ class AbbreviationMatcher(letterToMatchers: Map[String, AbbreviationMatcherByLet
       val result = for {
         mtch <- matches.map { _.term }.distinct
         fullWord <- matcher.verbatimRestToWords(mtch)
-        fullWordDataSource <- matcher.verbatimRestToDatasources(mtch)
-        if dataSources.isEmpty || dataSources.contains(fullWordDataSource)
+        fullWordDataSourcesFound = {
+          val ds = matcher.verbatimRestToDatasources(mtch)
+          dataSources.isEmpty ? ds | ds.intersect(dataSources)
+        }
+        if fullWordDataSourcesFound.nonEmpty
       } yield {
         val wordStemMatch = StemMatcher.transform(fullWord)
-        Candidate(stem = wordStemMatch, term = fullWord, dataSourceId = fullWordDataSource,
+        Candidate(stem = wordStemMatch, term = fullWord, dataSourceIds = fullWordDataSourcesFound,
           verbatimEditDistance =
             LevenshteinAutomaton.computeEditDistance(word, fullWord).some,
           stemEditDistance =
