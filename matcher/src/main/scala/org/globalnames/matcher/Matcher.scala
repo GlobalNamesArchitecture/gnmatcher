@@ -1,4 +1,5 @@
-package org.globalnames.matcher
+package org.globalnames
+package matcher
 
 import com.typesafe.scalalogging.Logger
 
@@ -24,10 +25,13 @@ object SimpleMatcher {
 }
 
 class Matcher(simpleMatcher: SimpleMatcher,
-              abbreviationMatcher: AbbreviationMatcher) {
+              abbreviationMatcher: AbbreviationMatcher,
+              genusMatcher: GenusMatcher) {
   def findMatches(word: String, dataSources: Set[Int]): Vector[Candidate] = {
     val finder: (String, Set[Int]) => Vector[Candidate] =
-      if (AbbreviationMatcher.transform(word).valid) {
+      if (GenusMatcher.valid(word)) {
+        genusMatcher.findMatches
+      } else if (AbbreviationMatcher.transform(word).valid) {
         abbreviationMatcher.findMatches
       } else {
         simpleMatcher.findMatches
@@ -53,8 +57,12 @@ object Matcher {
     val abbreviationMatcher = AbbreviationMatcher(nameToDatasourceIdsMap)
     logger.info("AbbreviationMatcher created")
 
+    logger.info("Creating AbbreviationMatcher")
+    val genusMatcher = GenusMatcher(nameToDatasourceIdsMap)
+    logger.info("AbbreviationMatcher created")
+
     val simpleMatcher = SimpleMatcher(verbatimMatcher, stemMatcher)
-    val matcher = new Matcher(simpleMatcher, abbreviationMatcher)
+    val matcher = new Matcher(simpleMatcher, abbreviationMatcher, genusMatcher)
     matcher
   }
 }
