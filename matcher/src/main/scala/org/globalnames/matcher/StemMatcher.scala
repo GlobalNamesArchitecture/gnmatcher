@@ -29,6 +29,7 @@ class StemMatcher private(wordToDatasources: Map[String, Set[Int]],
 
     val result = for {
       stemMatch <- stemMatches.toVector
+      if Matcher.matchingThreshold(wordStem, stemMatch)
       fullWord <- wordStemToWords(stemMatch)
       fullWordDataSourcesFound = {
         val ds = wordToDatasources(fullWord)

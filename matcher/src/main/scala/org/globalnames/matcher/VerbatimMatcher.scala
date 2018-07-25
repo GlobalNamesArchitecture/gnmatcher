@@ -28,6 +28,7 @@ class VerbatimMatcher(wordToDatasources: Map[String, Set[Int]],
 
     val result = for {
       verbatimMatch <- verbatimMatches.toVector
+      if Matcher.matchingThreshold(wordVerbatim, verbatimMatch)
       fullWord <- wordVerbatimToWords(verbatimMatch)
       fullWordDataSourcesFound = {
         val ds = wordToDatasources(fullWord)
