@@ -13,6 +13,9 @@ import scalaz.syntax.std.boolean._
 class SimpleMatcher private(verbatimMatcher: VerbatimMatcher,
                             stemMatcher: StemMatcher) {
 
+  def completed: Future[Unit] =
+    for (_ <- verbatimMatcher.completed; _ <- stemMatcher.completed) yield ()
+
   def findMatches(word: String, dataSources: Set[Int]): Vector[Candidate] = {
     val matchesByStem = stemMatcher.findMatches(word, dataSources)
     if (matchesByStem.nonEmpty) {
@@ -33,6 +36,9 @@ object SimpleMatcher {
 class Matcher(simpleMatcher: SimpleMatcher,
               abbreviationMatcher: AbbreviationMatcher,
               genusMatcher: GenusMatcher) {
+
+  def completed: Future[Unit] = simpleMatcher.completed
+
   def findMatches(word: String, dataSources: Set[Int]): Vector[Candidate] = {
     val finder: (String, Set[Int]) => Vector[Candidate] =
       if (GenusMatcher.valid(word)) {

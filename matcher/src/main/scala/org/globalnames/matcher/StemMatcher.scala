@@ -22,6 +22,8 @@ class StemMatcher private(wordToDatasources: Map[String, Set[Int]],
 
   private val maxEditDistance = 2
 
+  def completed: Future[Unit] = mdagFut.map { _ => () }
+
   def findMatches(word: String, dataSources: Set[Int]): Vector[Candidate] = {
     val wordStem = StemMatcher.transform(word)
     val stemMatches =

@@ -20,6 +20,8 @@ class VerbatimMatcher(wordToDatasources: Map[String, Set[Int]],
                       mdagFut: Future[MDAG]) {
   private val maxEditDistance = 2
 
+  def completed: Future[Unit] = mdagFut.map { _ => () }
+
   def findMatches(word: String, dataSources: Set[Int]): Vector[Candidate] = {
     val wordVerbatim = VerbatimMatcher.transform(word)
     val wordStem = StemMatcher.transform(word)
