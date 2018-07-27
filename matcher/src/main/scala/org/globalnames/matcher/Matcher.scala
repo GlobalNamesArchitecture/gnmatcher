@@ -137,22 +137,46 @@ object Matcher {
     }
   }
 
-  def apply(nameToDatasourceIdsMap: Map[String, Set[Int]]): Matcher = {
+  def sanitizeWord(word: String): String = {
+    word.trim.replaceAll("\\s+", " ")
+  }
+
+  private def valid(word: String): Boolean = {
+    val wordParts = word.fastSplit(' ')
+    wordParts.nonEmpty && wordParts.length < 5 && wordParts.head.last != '.'
+  }
+
+  def apply(nameToDatasourceIdsMapX: Map[String, Set[Int]]): Matcher = {
+    val nameToDatasourceIdsMap =
+      nameToDatasourceIdsMapX.map { case (k, v) => sanitizeWord(k) -> v }
+
     logger.info("Creating StemMatcher")
-    val stemMatcher = StemMatcher(nameToDatasourceIdsMap)
+    val stemMatcher = {
+      val ntdim = nameToDatasourceIdsMap.filterKeys { k => valid(k) }
+      StemMatcher(ntdim)
+    }
     logger.info("StemMatcher created")
 
     logger.info("Creating VerbatimMatcher")
-    val verbatimMatcher = VerbatimMatcher(nameToDatasourceIdsMap)
+    val verbatimMatcher = {
+      val ntdim = nameToDatasourceIdsMap.filterKeys { k => valid(k) }
+      VerbatimMatcher(ntdim)
+    }
     logger.info("VerbatimMatcher created")
 
     logger.info("Creating AbbreviationMatcher")
-    val abbreviationMatcher = AbbreviationMatcher(nameToDatasourceIdsMap)
+    val abbreviationMatcher = {
+      val ntdim = nameToDatasourceIdsMap.filterKeys { k => valid(k) }
+      AbbreviationMatcher(ntdim)
+    }
     logger.info("AbbreviationMatcher created")
 
-    logger.info("Creating AbbreviationMatcher")
-    val genusMatcher = GenusMatcher(nameToDatasourceIdsMap)
-    logger.info("AbbreviationMatcher created")
+    logger.info("Creating GenusMatcher")
+    val genusMatcher = {
+      val ntdim = nameToDatasourceIdsMap.filterKeys { k => GenusMatcher.valid(k) }
+      GenusMatcher(ntdim)
+    }
+    logger.info("GenusMatcher created")
 
     val simpleMatcher = SimpleMatcher(verbatimMatcher, stemMatcher)
     val matcher = new Matcher(simpleMatcher, abbreviationMatcher, genusMatcher)
