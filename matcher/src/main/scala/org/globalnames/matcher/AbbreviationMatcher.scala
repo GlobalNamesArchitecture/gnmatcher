@@ -16,14 +16,13 @@ case class AbbreviationMatcherByLetter(simpleMatcher: SimpleMatcher,
 
 private[matcher]
 class AbbreviationMatcher(letterToMatchers: Map[String, AbbreviationMatcherByLetter]) {
-  def findMatches(word: String, dataSources: Set[Int]): Vector[Candidate] = {
-    val wordTransformed = AbbreviationMatcher.transform(word)
+  def findMatches(wordTransformed: AbbreviatedWord, dataSources: Set[Int]): Vector[Candidate] = {
     if (!wordTransformed.valid || !letterToMatchers.contains(wordTransformed.letter)) {
       Vector.empty
     } else {
       val matcher = letterToMatchers(wordTransformed.letter)
       val matches = matcher.simpleMatcher.findMatches(wordTransformed.restVerbatim, dataSources)
-      val wordStem = StemMatcher.transform(word)
+      val wordStem = StemMatcher.transform(wordTransformed.originalWord)
 
       val result = for {
         mtch <- matches.map { _.term }.distinct
@@ -37,7 +36,7 @@ class AbbreviationMatcher(letterToMatchers: Map[String, AbbreviationMatcherByLet
         val wordStemMatch = StemMatcher.transform(fullWord)
         Candidate(stem = wordStemMatch, term = fullWord, dataSourceIds = fullWordDataSourcesFound,
           verbatimEditDistance =
-            LevenshteinAutomaton.computeEditDistance(word, fullWord).some,
+            LevenshteinAutomaton.computeEditDistance(wordTransformed.originalWord, fullWord).some,
           stemEditDistance =
             LevenshteinAutomaton.computeEditDistance(wordStem, wordStemMatch).some)
       }

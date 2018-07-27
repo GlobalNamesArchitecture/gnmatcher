@@ -40,16 +40,16 @@ class Matcher(simpleMatcher: SimpleMatcher,
   def completed: Future[Unit] = simpleMatcher.completed
 
   def findMatches(word: String, dataSources: Set[Int]): Vector[Candidate] = {
-    val finder: (String, Set[Int]) => Vector[Candidate] =
-      if (GenusMatcher.valid(word)) {
-        genusMatcher.findMatches
-      } else if (AbbreviationMatcher.transform(word).valid) {
-        abbreviationMatcher.findMatches
+    if (GenusMatcher.valid(word)) {
+      genusMatcher.findMatches(word, dataSources)
+    } else {
+      val w = AbbreviationMatcher.transformInputWord(word)
+      if (w.valid) {
+        abbreviationMatcher.findMatches(w, dataSources)
       } else {
-        simpleMatcher.findMatches
+        simpleMatcher.findMatches(word, dataSources)
       }
-
-    finder(word, dataSources)
+    }
   }
 }
 
