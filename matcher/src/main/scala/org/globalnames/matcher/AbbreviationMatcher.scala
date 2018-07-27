@@ -64,7 +64,7 @@ object AbbreviationMatcher {
         logger.info(s"Abbreviation matcher (progress): $idx")
       }
 
-      val abbreviatedWord = transform(word)
+      val abbreviatedWord = transformInitWord(word)
 
       if (abbreviatedWord.valid) {
         val ltv = letterToVerbatimsRest.getOrElse(abbreviatedWord.letter, mutable.Map.empty)
@@ -95,12 +95,13 @@ object AbbreviationMatcher {
     new AbbreviationMatcher(result.toMap)
   }
 
-  def transform(word: String): AbbreviatedWord = {
-    val wordParts = word.toLowerCase.fastSplit(' ')
-    if (wordParts.isEmpty ||
-        wordParts.head.last != '.' ||
-        wordParts.head.length > 2 ||
-        wordParts.length < 2) {
+  def transformInputWord(word: String): AbbreviatedWord = {
+    val wordParts = word.toLowerCase
+                        .replace('j', 'i')
+                        .replace('v', 'u')
+                        .fastSplit(' ')
+    if (wordParts.head.length > 2 ||
+        wordParts.head.last != '.') {
       AbbreviatedWord(None, "", "", "")
     } else {
       val restStemmed =
@@ -108,6 +109,25 @@ object AbbreviationMatcher {
       val restVerbatim =
         wordParts.tail.mkString(" ")
       val letterOnly = wordParts.head.dropRight(1)
+      AbbreviatedWord(letterOnly.some, word, restStemmed, restVerbatim)
+    }
+  }
+
+  def transformInitWord(word: String): AbbreviatedWord = {
+    val wordParts = word.toLowerCase
+                        .replace('j', 'i')
+                        .replace('v', 'u')
+                        .fastSplit(' ')
+    if (wordParts.isEmpty ||
+        wordParts.length > 4 ||
+        wordParts.exists { x => x.last == '.' }) {
+      AbbreviatedWord(None, "", "", "")
+    } else {
+      val restStemmed =
+        wordParts.tail.map { w => LatinStemmer.stemmize(w).mappedStem }.mkString(" ")
+      val restVerbatim =
+        wordParts.tail.mkString(" ")
+      val letterOnly = wordParts.head.substring(0, 1)
       AbbreviatedWord(letterOnly.some, word, restStemmed, restVerbatim)
     }
   }
