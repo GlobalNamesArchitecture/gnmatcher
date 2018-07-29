@@ -159,7 +159,7 @@ public class MDAG {
             //Add all the Strings in strCollection to the MDAG.
             for (String currentString : strCollection) {
                 counter++;
-                if (counter > 0 && counter % 1000 == 0) {
+                if (counter > 0 && counter % 100000 == 0) {
                     System.out.println(counter);
                 }
 

@@ -54,9 +54,9 @@ object StemMatcher {
     val wordStemToWords = mutable.Map.empty[String, Set[String]]
     val wordStems = ArrayBuffer[String]()
 
-    for (((word, _), idx) <- wordToDatasources.zipWithIndex) {
-      if (idx > 0 && idx % 10000 == 0) {
-        logger.info(s"Stem matcher (progress): $idx")
+    for ((word, idx) <- wordToDatasources.keys.toVector.zipWithIndex) {
+      if (idx > 0 && idx % 100000 == 0) {
+         logger.info(s"Stem matcher (progress): $idx")
       }
 
       val wordStem = transform(word)
@@ -65,6 +65,7 @@ object StemMatcher {
     }
 
     val mdagFut = Future { new MDAG(wordStems.sorted) }
+    mdagFut.onComplete { _ => logger.info("MDAG constructed") }
     val sm = new StemMatcher(wordToDatasources, wordStemToWords, mdagFut)
     sm
   }

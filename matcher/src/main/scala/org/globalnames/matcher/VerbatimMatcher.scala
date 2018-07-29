@@ -13,6 +13,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import akka.http.impl.util.EnhancedString
 
 private[matcher]
 class VerbatimMatcher(wordToDatasources: Map[String, Set[Int]],
@@ -56,8 +57,8 @@ object VerbatimMatcher {
     val wordVerbatimToWords = mutable.Map.empty[String, Set[String]]
     val wordVerbatims = ArrayBuffer[String]()
 
-    for (((word, _), idx) <- wordToDatasources.zipWithIndex) {
-      if (idx > 0 && idx % 10000 == 0) {
+    for ((word, idx) <- wordToDatasources.keys.toVector.zipWithIndex) {
+      if (idx > 0 && idx % 100000 == 0) {
         logger.info(s"Verbatim matcher (progress): $idx")
       }
 
@@ -67,8 +68,9 @@ object VerbatimMatcher {
         wordVerbatim -> (wordVerbatimToWords.getOrElse(wordVerbatim, Set()) + word)
     }
 
-    val mdag = Future { new MDAG(wordVerbatims.sorted) }
-    val vm = new VerbatimMatcher(wordToDatasources, wordVerbatimToWords, mdag)
+    val mdagFut = Future { new MDAG(wordVerbatims.sorted) }
+    mdagFut.onComplete { _ => logger.info("MDAG constructed") }
+    val vm = new VerbatimMatcher(wordToDatasources, wordVerbatimToWords, mdagFut)
     vm
   }
 

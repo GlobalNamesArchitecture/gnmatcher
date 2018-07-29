@@ -58,8 +58,8 @@ object AbbreviationMatcher {
   def apply(wordToDatasources: Map[String, Set[Int]]): AbbreviationMatcher = {
     val letterToVerbatimsRest = mutable.Map.empty[String, mutable.Map[String, Set[String]]]
 
-    for (((word, _), idx) <- wordToDatasources.zipWithIndex) {
-      if (idx > 0 && idx % 10000 == 0) {
+    for ((word, idx) <- wordToDatasources.keys.toVector.zipWithIndex) {
+      if (idx > 0 && idx % 100000 == 0) {
         logger.info(s"Abbreviation matcher (progress): $idx")
       }
 
