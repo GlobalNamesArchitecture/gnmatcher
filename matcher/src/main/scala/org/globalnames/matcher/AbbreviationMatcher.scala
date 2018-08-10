@@ -22,7 +22,6 @@ class AbbreviationMatcher(letterToMatchers: Map[String, AbbreviationMatcherByLet
     } else {
       val matcher = letterToMatchers(wordTransformed.letter)
       val matches = matcher.simpleMatcher.findMatches(wordTransformed.restVerbatim, dataSources)
-      val wordStem = StemMatcher.transform(wordTransformed.originalWord)
 
       val result = for {
         mtch <- matches.map { _.term }.distinct
@@ -33,12 +32,19 @@ class AbbreviationMatcher(letterToMatchers: Map[String, AbbreviationMatcherByLet
         }
         if fullWordDataSourcesFound.nonEmpty
       } yield {
-        val wordStemMatch = StemMatcher.transform(fullWord)
-        Candidate(stem = wordStemMatch, term = fullWord, dataSourceIds = fullWordDataSourcesFound,
-          verbatimEditDistance =
-            LevenshteinAutomaton.computeEditDistance(wordTransformed.originalWord, fullWord).some,
-          stemEditDistance =
-            LevenshteinAutomaton.computeEditDistance(wordStem, wordStemMatch).some)
+        val wordFoundTransformed = AbbreviationMatcher.transformInitWord(fullWord)
+        val verbatimEditDistance =
+          LevenshteinAutomaton.computeEditDistance(
+            wordTransformed.restVerbatim, wordFoundTransformed.restVerbatim)
+        val stemEditDistance =
+          LevenshteinAutomaton.computeEditDistance(
+            wordTransformed.restStemmed, wordFoundTransformed.restStemmed)
+        Candidate(
+          stem = wordFoundTransformed.stemmed,
+          term = wordFoundTransformed.originalWord,
+          dataSourceIds = fullWordDataSourcesFound,
+          verbatimEditDistance = verbatimEditDistance.some,
+          stemEditDistance = stemEditDistance.some)
       }
       result
     }
@@ -50,6 +56,7 @@ case class AbbreviatedWord(letterOpt: Option[String],
                            restStemmed: String, restVerbatim: String) {
   def valid: Boolean = letterOpt.isDefined
   val letter: String = letterOpt.getOrElse("")
+  def stemmed: String = s"$letter. $restStemmed"
 }
 
 object AbbreviationMatcher {
