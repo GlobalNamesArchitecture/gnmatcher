@@ -17,37 +17,7 @@ case class AbbreviationMatcherByLetter(simpleMatcher: SimpleMatcher,
 private[matcher]
 class AbbreviationMatcher(letterToMatchers: Map[String, AbbreviationMatcherByLetter]) {
   def findMatches(wordTransformed: AbbreviatedWord, dataSources: Set[Int]): Vector[Candidate] = {
-    if (!wordTransformed.valid || !letterToMatchers.contains(wordTransformed.letter)) {
-      Vector.empty
-    } else {
-      val matcher = letterToMatchers(wordTransformed.letter)
-      val matches = matcher.simpleMatcher.findMatches(wordTransformed.restVerbatim, dataSources)
-
-      val result = for {
-        mtch <- matches.map { _.term }.distinct
-        fullWord <- matcher.verbatimRestToWords(mtch)
-        fullWordDataSourcesFound = {
-          val ds = matcher.verbatimRestToDatasources(mtch)
-          dataSources.isEmpty ? ds | ds.intersect(dataSources)
-        }
-        if fullWordDataSourcesFound.nonEmpty
-      } yield {
-        val wordFoundTransformed = AbbreviationMatcher.transformInitWord(fullWord)
-        val verbatimEditDistance =
-          LevenshteinAutomaton.computeEditDistance(
-            wordTransformed.restVerbatim, wordFoundTransformed.restVerbatim)
-        val stemEditDistance =
-          LevenshteinAutomaton.computeEditDistance(
-            wordTransformed.restStemmed, wordFoundTransformed.restStemmed)
-        Candidate(
-          stem = wordFoundTransformed.stemmed,
-          term = wordFoundTransformed.originalWord,
-          dataSourceIds = fullWordDataSourcesFound,
-          verbatimEditDistance = verbatimEditDistance.some,
-          stemEditDistance = stemEditDistance.some)
-      }
-      result
-    }
+    Vector.empty
   }
 }
 
@@ -63,42 +33,7 @@ object AbbreviationMatcher {
   private[AbbreviationMatcher] val logger = Logger[AbbreviationMatcher]
 
   def apply(wordToDatasources: Map[String, Set[Int]]): AbbreviationMatcher = {
-    val letterToVerbatimsRest = mutable.Map.empty[String, mutable.Map[String, Set[String]]]
-
-    for ((word, idx) <- wordToDatasources.keys.toVector.zipWithIndex) {
-      if (idx > 0 && idx % 100000 == 0) {
-        logger.info(s"Abbreviation matcher (progress): $idx")
-      }
-
-      val abbreviatedWord = transformInitWord(word)
-
-      if (abbreviatedWord.valid) {
-        val ltv = letterToVerbatimsRest.getOrElse(abbreviatedWord.letter, mutable.Map.empty)
-        ltv += abbreviatedWord.restVerbatim ->
-          (ltv.getOrElse(abbreviatedWord.restVerbatim, Set()) + word)
-        letterToVerbatimsRest += abbreviatedWord.letter -> ltv
-      }
-    }
-
-    val result = for (letter <- letterToVerbatimsRest.keys) yield {
-      val verbatimRestToFullwords = Map(letterToVerbatimsRest(letter).toList: _*)
-      val verbatimRestToDatasources =
-        for {
-          (verbatimRest, names) <- verbatimRestToFullwords
-          name <- names
-        } yield verbatimRest -> wordToDatasources(name)
-      val vm = VerbatimMatcher(verbatimRestToDatasources)
-      val sm = StemMatcher(verbatimRestToDatasources)
-
-      val ambl = AbbreviationMatcherByLetter(
-        SimpleMatcher(vm, sm),
-        verbatimRestToFullwords,
-        verbatimRestToDatasources
-      )
-
-      letter -> ambl
-    }
-    new AbbreviationMatcher(result.toMap)
+    new AbbreviationMatcher(Map.empty)
   }
 
   def transformInputWord(word: String): AbbreviatedWord = {
