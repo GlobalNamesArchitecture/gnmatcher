@@ -35,21 +35,31 @@ Corresponding maven code:
         <version>0.1.0</version>
     </dependency>
 
-Fuzzy Matching
---------------
+Matching
+--------
 
-To match input sequence against query run code as follows:
+``gnmatcher`` implements sophisticated heuristic algorithms to match semantical parts of
+scientific biological names as follows:
+
+- authors match answers to a question: how similar the authors string ``Linnaeus, Muller 1767``
+  to the ``Muller and Linnaeus``?
+
+Authors Matching
+~~~~~~~~~~~~~~~~
+
+The entire algorithm is ported from `Ruby implementation
+<https://github.com/GlobalNamesArchitecture/taxamatch_rb/blob/master/lib/taxamatch_rb/authmatch.rb>`_
+developed by Patrick Leary of uBio and EOL fame. To find out the answer to the question above, run the
+code as follows:
 
 .. code:: Scala
 
     $ sbt matcher/console
-    console> import org.globalnames.matcher.Matcher
-    console> val matcher = Matcher(Seq("Abdf", "Abce", "Dddd"), maxDistance = 2)
-    console> matcher.transduce("Abc")
-    res0: Seq[org.globalnames.Candidate] = Vector(Candidate(Abce,1), Candidate(Abdf,1))
+    scala> import org.globalnames._
+    scala> AuthorsMatcher.score(Seq(Author("Linnaeus"), Author("Muller")), Some(1767),
+         |                      Seq(Author("Muller"), Author("Linnaeus")), None)
+    res0: Double = 0.5
 
-Result contains only `Candidates` edit distance with merges and splits is not greater
-than `maxDistance`.
 
 Dump and Restore
 ----------------
