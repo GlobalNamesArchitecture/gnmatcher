@@ -7,20 +7,19 @@ Global Names Matcher
 Global Names Matcher or ``gnmatcher`` is a Scala 2.10.3+ library for very fast
 fuzzy matching of a query string against given set of strings.
 
-Dependency Declaration for Java or Scala
-----------------------------------------
+Installation
+------------
 
 The artifacts for ``gnmatcher`` live on `Maven
-Central <http://search.maven.org/#search%7Cga%7C1%7Cgnmatcher>`_ and can
-be set as a dependency in following ways:
+Central <http://search.maven.org/#search%7Cga%7C1%7Cgnmatcher>`_.
 
-SBT:
+Insert SBT line as follows to install the dependency:
 
 .. code:: Scala
 
     libraryDependencies += "org.globalnames" %% "gnmatcher" % "0.1.0"
 
-Maven:
+Corresponding maven code:
 
 .. code:: xml
 
