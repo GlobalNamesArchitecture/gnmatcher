@@ -49,8 +49,8 @@ Authors Matching
 
 The entire algorithm is ported from `Ruby implementation
 <https://github.com/GlobalNamesArchitecture/taxamatch_rb/blob/master/lib/taxamatch_rb/authmatch.rb>`_
-developed by Patrick Leary of uBio and EOL fame. To find out the answer to the question above, run the
-code as follows:
+developed by Patrick Leary of uBio and EOL fame. To find out the answer to the question above, run
+the code as follows:
 
 .. code:: Scala
 
@@ -60,24 +60,6 @@ code as follows:
          |                      Seq(Author("Muller"), Author("Linnaeus")), None)
     res0: Double = 0.5
 
-
-Dump and Restore
-----------------
-
-Fuzzy matching is very fast. It is theoretically proven to be constant time of
-query string. But building inner data structures for input string might be long.
-To avoid rebuilding of `Matcher` it is useful to dump and restore it from file
-as follows:
-
-.. code:: Scala
-
-    $ sbt matcher/console
-    console> import org.globalnames.matcher.Matcher
-    console> val matcher = Matcher(Seq("Abdf", "Abce", "Dddd"), maxDistance = 2)
-    console> matcher.dump(dumpPath = "matcher.ser")
-    console> val matcherRestored = Matcher.restore(dumpPath = "matcher.ser")
-    console> matcherRestored.transduce("Abc")
-    res0: Seq[org.globalnames.Candidate] = Vector(Candidate(Abce,1), Candidate(Abdf,1))
 
 Contributors
 ------------
